@@ -2,47 +2,52 @@ pipeline {
   agent any
 
   environment {
-    COMPOSE_CMD = "docker compose -f docker-compose.yml --env-file .env"
+    COMPOSE_FILE = "docker-compose.yml"
+    ENV_FILE = ".env"
   }
 
   stages {
     stage('Clone') {
       steps {
-        checkout scm
+        echo '📥 Clonage du dépôt déjà fait automatiquement.'
       }
     }
 
     stage('Stop containers') {
       steps {
-        sh "${COMPOSE_CMD} down"
+        echo '🛑 Arrêt des conteneurs existants...'
+        sh 'docker-compose -f ${COMPOSE_FILE} --env-file ${ENV_FILE} down || true'
       }
     }
 
     stage('Build') {
       steps {
-        sh "${COMPOSE_CMD} build"
+        echo '🏗️ Construction des conteneurs...'
+        sh 'docker-compose -f ${COMPOSE_FILE} --env-file ${ENV_FILE} build'
       }
     }
 
     stage('Deploy') {
       steps {
-        sh "${COMPOSE_CMD} up -d"
+        echo '🚀 Lancement des conteneurs...'
+        sh 'docker-compose -f ${COMPOSE_FILE} --env-file ${ENV_FILE} up -d'
       }
     }
 
     stage('Check') {
       steps {
-        sh "docker ps"
+        echo '🔍 Vérification des services en cours...'
+        sh 'docker-compose ps'
       }
     }
   }
 
   post {
-    success {
-      echo 'Déploiement réussi'
-    }
     failure {
-      echo 'Oups, échec du pipeline'
+      echo '❌ Oups, échec du pipeline.'
+    }
+    success {
+      echo '✅ Pipeline terminé avec succès !'
     }
   }
 }
